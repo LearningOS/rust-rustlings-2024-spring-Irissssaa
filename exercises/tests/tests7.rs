@@ -34,10 +34,29 @@
 // Execute `rustlings hint tests7` or use the `hint` watch subcommand for a
 // hint.
 
-// I AM NOT DONE
 
-fn main() {}
 
+use std::process::Command;
+
+fn main() {
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+
+    let output = Command::new("cargo")
+        .args(&["metadata", "--format-version=1"])
+        .output()
+        .expect("Failed to execute command");
+
+    let metadata = String::from_utf8_lossy(&output.stdout);
+    let metadata_json: serde_json::Value = serde_json::from_str(&metadata).unwrap();
+    
+    let manifest_dir = metadata_json["workspace_root"].as_str().unwrap();
+
+    println!("cargo:TEST_FOO={}", timestamp);
+    println!("cargo:rerun-if-changed={}/build.rs", manifest_dir);
+}
 #[cfg(test)]
 mod tests {
     use super::*;

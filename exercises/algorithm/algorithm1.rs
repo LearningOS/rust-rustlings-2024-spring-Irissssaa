@@ -6,7 +6,6 @@
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
-use std::vec::*;
 
 #[derive(Debug)]
 struct Node<T> {
@@ -22,6 +21,7 @@ impl<T> Node<T> {
         }
     }
 }
+
 #[derive(Debug)]
 struct LinkedList<T> {
     length: u32,
@@ -69,15 +69,43 @@ impl<T> LinkedList<T> {
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
-	{
-		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
+
+    pub fn merge(list_a: LinkedList<T>, list_b: LinkedList<T>) -> Self
+    where
+        T: Ord,
+    {
+        let mut merged_list = LinkedList::new();
+
+        let mut current_a = list_a.start;
+        let mut current_b = list_b.start;
+
+        while let (Some(node_a), Some(node_b)) = (current_a, current_b) {
+            let val_a = unsafe { (*node_a.as_ptr()).val };
+            let val_b = unsafe { (*node_b.as_ptr()).val };
+
+            if val_a <= val_b {
+                merged_list.add(val_a);
+                current_a = unsafe { (*node_a.as_ptr()).next };
+            } else {
+                merged_list.add(val_b);
+                current_b = unsafe { (*node_b.as_ptr()).next };
+            }
         }
-	}
+
+        while let Some(node_a) = current_a {
+            let val_a = unsafe { (*node_a.as_ptr()).val };
+            merged_list.add(val_a);
+            current_a = unsafe { (*node_a.as_ptr()).next };
+        }
+
+        while let Some(node_b) = current_b {
+            let val_b = unsafe { &(*node_b.as_ptr()).val };
+            merged_list.add(val_b);
+            current_b = unsafe { &(*node_b.as_ptr()).next };
+        }
+
+        merged_list
+    }
 }
 
 impl<T> Display for LinkedList<T>
@@ -104,6 +132,20 @@ where
     }
 }
 
+fn main() {
+    let mut list_a = LinkedList::new();
+    list_a.add(1);
+    list_a.add(3);
+    list_a.add(5);
+
+    let mut list_b = LinkedList::new();
+    list_b.add(2);
+    list_b.add(4);
+    list_b.add(6);
+
+    let merged_list = LinkedList::merge(list_a, list_b);
+    println!("Merged list: {}", merged_list);
+}
 #[cfg(test)]
 mod tests {
     use super::LinkedList;
