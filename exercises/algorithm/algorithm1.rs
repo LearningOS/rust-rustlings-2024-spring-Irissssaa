@@ -2,7 +2,7 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
+
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -56,23 +56,9 @@ impl<T> LinkedList<T> {
         self.length += 1;
     }
 
-    pub fn get(&mut self, index: i32) -> Option<&T> {
-        self.get_ith_node(self.start, index)
-    }
-
-    fn get_ith_node(&mut self, node: Option<NonNull<Node<T>>>, index: i32) -> Option<&T> {
-        match node {
-            None => None,
-            Some(next_ptr) => match index {
-                0 => Some(unsafe { &(*next_ptr.as_ptr()).val }),
-                _ => self.get_ith_node(unsafe { (*next_ptr.as_ptr()).next }, index - 1),
-            },
-        }
-    }
-
     pub fn merge(list_a: LinkedList<T>, list_b: LinkedList<T>) -> Self
     where
-        T: Ord,
+        T: Ord + Clone,
     {
         let mut merged_list = LinkedList::new();
 
@@ -80,8 +66,8 @@ impl<T> LinkedList<T> {
         let mut current_b = list_b.start;
 
         while let (Some(node_a), Some(node_b)) = (current_a, current_b) {
-            let val_a = unsafe { (*node_a.as_ptr()).val };
-            let val_b = unsafe { (*node_b.as_ptr()).val };
+            let val_a = unsafe { (*node_a.as_ptr()).val.clone() };
+            let val_b = unsafe { (*node_b.as_ptr()).val.clone() };
 
             if val_a <= val_b {
                 merged_list.add(val_a);
@@ -93,15 +79,15 @@ impl<T> LinkedList<T> {
         }
 
         while let Some(node_a) = current_a {
-            let val_a = unsafe { (*node_a.as_ptr()).val };
+            let val_a = unsafe { (*node_a.as_ptr()).val.clone() };
             merged_list.add(val_a);
             current_a = unsafe { (*node_a.as_ptr()).next };
         }
 
         while let Some(node_b) = current_b {
-            let val_b = unsafe { &(*node_b.as_ptr()).val };
+            let val_b = unsafe { (*node_b.as_ptr()).val.clone() };
             merged_list.add(val_b);
-            current_b = unsafe { &(*node_b.as_ptr()).next };
+            current_b = unsafe { (*node_b.as_ptr()).next };
         }
 
         merged_list
@@ -113,22 +99,18 @@ where
     T: Display,
 {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self.start {
-            Some(node) => write!(f, "{}", unsafe { node.as_ref() }),
-            None => Ok(()),
+        let mut current = self.start;
+        while let Some(node_ptr) = current {
+            let node_ref = unsafe { node_ptr.as_ref() };
+            write!(f, "{}", node_ref.val)?;
+            if let Some(next_ptr) = node_ref.next {
+                write!(f, ", ")?;
+                current = Some(next_ptr);
+            } else {
+                break;
+            }
         }
-    }
-}
-
-impl<T> Display for Node<T>
-where
-    T: Display,
-{
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self.next {
-            Some(node) => write!(f, "{}, {}", self.val, unsafe { node.as_ref() }),
-            None => write!(f, "{}", self.val),
-        }
+        Ok(())
     }
 }
 
